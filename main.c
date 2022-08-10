@@ -55,7 +55,9 @@ Please set it before executing this binary using:\n\
   while (fgets(path, sizeof(path), fp) != NULL) {
     path[strcspn(path, "\n")] = 0; // \n breaks stat()
     if (is_file(path)) {
-      mount(path, "/dev/urandom", "none", 0, "bind");
+      if (mount("/dev/null", path, "none", MS_BIND, "bind") == -1) {
+        perror("mount");
+      }
     }
   }
   pclose(fp);
