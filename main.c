@@ -63,7 +63,8 @@ Please set it before executing this binary using:\n\
   char *shell = getenv("SHELL");
   char *child_argv[] = { NULL };
   if (execve(shell, child_argv, envp) == -1) {
-    perror("Could not execute bash");
+    perror("Could not execute $SHELL");
+    exit(EXIT_FAILURE);
   }
   
   return 0;
