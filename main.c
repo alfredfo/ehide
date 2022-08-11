@@ -21,6 +21,7 @@ int is_file(char path[]) {
 
 int hide_package(const char* atom) {
   FILE *fp;
+  char path[PATH_MAX+1];
   /* str + max filename * 2 + \0, overkill */
   char cmd[12+255+255+1] = "equery files ";
   strcat(cmd, atom);
@@ -29,7 +30,6 @@ int hide_package(const char* atom) {
     fprintf(stderr, "failed querying files for %s\n", atom);
     return -1;
   }
-  char path[PATH_MAX+1];
   memset(path, 0, sizeof(path));
   while (fgets(path, sizeof(path), fp) != NULL) {
     /* \n breaks stat() */
@@ -45,9 +45,13 @@ int hide_package(const char* atom) {
 }
 
 int main(int argc, char* argv[], char *envp[]) {
-  cap_t cap = cap_get_proc();
+  cap_t cap;
   cap_flag_value_t cf;
+  char **arg;
+  char *shell;
+  char *child_argv[] = { NULL };
   /* needed for unshare(CLONE_NEWNS) */
+  cap = cap_get_proc();
   cap_get_flag(cap, CAP_SYS_ADMIN, CAP_EFFECTIVE, &cf);
   if (cf == CAP_CLEAR) {
     fprintf(stderr, "CAP_SYS_ADMIN is cleared\n\
@@ -56,7 +60,8 @@ Please set it before executing this binary using:\n\
     exit(EXIT_FAILURE);
   }
   if (argc < 2) {
-    fprintf(stdout, "desc: hide installed Portage package files using mount namespaces\n\
+    fprintf(stdout, "desc: hide installed Portage \
+package files using mount namespaces\n\
 page: https://github.com/alfredfo/ehide\n\
 usage: ehide <atom 1> <atom 2> <atom 3> ...\n");
     exit(EXIT_FAILURE);
@@ -66,7 +71,6 @@ usage: ehide <atom 1> <atom 2> <atom 3> ...\n");
     exit(EXIT_FAILURE);
   }
   /* stops at last arg, argv[argc]. */
-  char **arg;
   for (arg = ++argv; *arg; ++arg) {
     if (hide_package(*arg) == -1) {
       fprintf(stderr, "failed hiding package: %s\n", *arg);
@@ -74,8 +78,7 @@ usage: ehide <atom 1> <atom 2> <atom 3> ...\n");
     }
     printf("package hidden: %s\n", *arg);
   }
-  char *shell = getenv("SHELL");
-  char *child_argv[] = { NULL };
+  shell = getenv("SHELL");
   if (execve(shell, child_argv, envp) == -1) {
     perror("Could not execute $SHELL");
     exit(EXIT_FAILURE);
