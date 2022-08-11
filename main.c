@@ -70,7 +70,6 @@ usage: ehide <atom 1> <atom 2> <atom 3> ...\n");
     perror("unshare");
     exit(EXIT_FAILURE);
   }
-  /* stops at last arg, argv[argc]. */
   for (arg = ++argv; *arg; ++arg) {
     if (hide_package(*arg) == -1) {
       fprintf(stderr, "failed hiding package: %s\n", *arg);
